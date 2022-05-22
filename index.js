@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config()
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { decode } = require('jsonwebtoken');
 
 // middleware
@@ -42,6 +42,7 @@ async function run() {
         // db collections
         const productsCollection = client.db('galva_nistry').collection('products')
         const userCollection = client.db('galva_nistry').collection('users')
+        const orderCollection = client.db('galva_nistry').collection('orders')
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -49,6 +50,14 @@ async function run() {
             const data = await cursor.toArray()
             res.send(data)
         });
+
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: ObjectId(id) }
+            const products = await productsCollection.findOne(query);
+            res.send(products)
+        })
 
         // update user's email
         app.put('/user/:email', async (req, res) => {
@@ -62,6 +71,12 @@ async function run() {
             const result = await userCollection.updateOne(filter, updatedDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
             res.send({ result, token })
+        })
+
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result)
         })
 
     }
