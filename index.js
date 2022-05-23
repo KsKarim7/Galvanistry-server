@@ -20,7 +20,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        console.log(authHeader)
+        // console.log(authHeader)
         return res.status(401).send({ message: 'Unauthorized Access' });
     }
     const token = authHeader.split(' ')[1];
@@ -29,7 +29,7 @@ function verifyJWT(req, res, next) {
             return res.status(403).send({ message: 'Forbidden Access' });
         }
         req.decoded = decoded;
-        console.log('decod', decoded);
+        // console.log('decod', decoded);
         next();
     })
 }
@@ -53,7 +53,7 @@ async function run() {
 
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id)
+            // console.log(id)
             const query = { _id: ObjectId(id) }
             const products = await productsCollection.findOne(query);
             res.send(products)
@@ -76,6 +76,13 @@ async function run() {
         app.post('/order', async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
+            res.send(result)
+        })
+
+        // add user's review
+        app.post('/user', async (req, res) => {
+            const addReview = req.body;
+            const result = await userCollection.insertOne(addReview);
             res.send(result)
         })
 
