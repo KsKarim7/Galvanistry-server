@@ -74,6 +74,16 @@ async function run() {
             res.send({ result, token })
         })
 
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updatedDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result)
+        })
+
         app.post('/order', async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
@@ -101,6 +111,15 @@ async function run() {
             const cursor = userCollection.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews)
+        })
+
+        // get all users
+        app.get('/users', verifyJWT, async (req, res) => {
+            const review = req.query.email;
+            const query = { review: review }
+            const cursor = userCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
         })
 
     }
