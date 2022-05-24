@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { decode } = require('jsonwebtoken');
+const { use } = require('express/lib/application');
 
 // middleware
 app.use(cors())
@@ -79,11 +80,27 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/order', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const orders = await orderCollection.find(query).toArray();
+            res.send(orders)
+        })
+
         // add user's review
         app.post('/user', async (req, res) => {
             const addReview = req.body;
             const result = await userCollection.insertOne(addReview);
             res.send(result)
+        })
+
+        // get review
+        app.get('/user', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = userCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews)
         })
 
     }
