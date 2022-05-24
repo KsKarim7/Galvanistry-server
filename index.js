@@ -76,12 +76,26 @@ async function run() {
 
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            const filter = { email: email };
-            const updatedDoc = {
-                $set: { role: 'admin' },
-            };
-            const result = await userCollection.updateOne(filter, updatedDoc);
-            res.send(result)
+            const initiator = req.params.email;
+            const initiatorAccount = await userCollection.findOne({ email: initiator });
+            if (initiatorAccount.role === 'admin') {
+                const filter = { email: email };
+                const updatedDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await userCollection.updateOne(filter, updatedDoc);
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' })
+            }
+        })
+
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email })
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
         })
 
         app.post('/order', async (req, res) => {
@@ -118,6 +132,14 @@ async function run() {
             const review = req.query.email;
             const query = { review: review }
             const cursor = userCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
+        })
+
+        // get all orders 
+        app.get('/orders', async (req, res) => {
+            const query = {};
+            const cursor = orderCollection.find(query);
             const result = await cursor.toArray();
             res.send(result)
         })
