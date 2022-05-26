@@ -3,11 +3,11 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config()
 const jwt = require('jsonwebtoken');
-const stripe = require('stripe')(STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const { decode } = require('jsonwebtoken');
-const { use } = require('express/lib/application');
+// const { decode } = require('jsonwebtoken');
+// const { use } = require('express/lib/application');
 
 
 // middleware
@@ -46,6 +46,7 @@ async function run() {
         const productsCollection = client.db('galva_nistry').collection('products')
         const userCollection = client.db('galva_nistry').collection('users')
         const orderCollection = client.db('galva_nistry').collection('orders')
+        const paymentCollection = client.db('galva_nistry').collection('payments')
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -179,9 +180,9 @@ async function run() {
         // payment api
 
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
-            const order = req.body;
-            const price = order.price;
-            const amount = price * 100;
+            const order = req.body;   //if it doesn't work with order , try with product 
+            const cost = order.cost;
+            const amount = cost * 100;
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: 'usd',
@@ -189,6 +190,22 @@ async function run() {
             });
             res.send({ clientSecret: paymentIntent.client_secret })
         });
+
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateOrder = await orderCollection.updateOne(filter, updatedDoc);
+            const result = await paymentCollection.insertOne(payment);
+            res.send(updatedDoc)
+
+        })
 
     }
     finally {
