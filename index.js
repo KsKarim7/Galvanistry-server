@@ -3,10 +3,12 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config()
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { decode } = require('jsonwebtoken');
 const { use } = require('express/lib/application');
+
 
 // middleware
 app.use(cors())
@@ -105,14 +107,14 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/order', verifyJWT, async (req, res) => {
+        app.get('/order', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const orders = await orderCollection.find(query).toArray();
             res.send(orders)
         })
 
-        app.get('/order/:id', verifyJWT, async (req, res) => {
+        app.get('/order/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const order = await orderCollection.findOne(query);
@@ -165,6 +167,28 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.send(result)
         })
+
+        // get all order
+        app.get('/orders', async (req, res) => {
+            const query = {};
+            const cursor = orderCollection.find(query)
+            const data = await cursor.toArray()
+            res.send(data)
+        });
+
+        // payment api
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
 
     }
     finally {
