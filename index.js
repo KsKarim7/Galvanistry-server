@@ -47,6 +47,7 @@ async function run() {
         const userCollection = client.db('galva_nistry').collection('users')
         const orderCollection = client.db('galva_nistry').collection('orders')
         const paymentCollection = client.db('galva_nistry').collection('payments')
+        const profileCollection = client.db('galva_nistry').collection('profiles')
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -205,6 +206,20 @@ async function run() {
             const result = await paymentCollection.insertOne(payment);
             res.send(updatedDoc)
 
+        })
+
+        // add user profiles
+        app.post('/profile', async (req, res) => {
+            const profile = req.body;
+            const result = await profileCollection.insertOne(profile);
+            res.send(result)
+        })
+
+        // add product
+        app.post('/product', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send(result)
         })
 
     }
